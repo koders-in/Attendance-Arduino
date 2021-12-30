@@ -19,13 +19,11 @@ MORN_SHIFT_END = 48600
 EVENING_SHIFT_START = 48660
 EVENING_SHIFT_END = 7200
 
-
 client = Client(url=HASURA_URL, headers=HASURA_HEADERS)
 
-# client.post_time_in(21, "20:00:00")
-
-
 # TODO => If clock_in has no value in dawn or dusk, insert as clock_in in the right table. If clock_in exists, register as clock out.
+
+
 def insert_attendance(id, time):
     # time_in = self.fetch_time_in(id)
     # formatted_time = time_in['data']['dawn_by_pk']['clock_in']

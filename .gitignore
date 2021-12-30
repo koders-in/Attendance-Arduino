@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Virtual environment
+env
+
+# Mac OS config files
+.DS_store
