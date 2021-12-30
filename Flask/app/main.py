@@ -1,5 +1,5 @@
 from util import Client
-from datetime import datetime
+from datetime import datetime, time
 import os
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -18,6 +18,7 @@ MORN_SHIFT_START = 7260
 MORN_SHIFT_END = 48600
 EVENING_SHIFT_START = 48660
 EVENING_SHIFT_END = 7200
+COOLDOWN_INTERVAL = 1800
 
 client = Client(url=HASURA_URL, headers=HASURA_HEADERS)
 
@@ -25,12 +26,11 @@ client = Client(url=HASURA_URL, headers=HASURA_HEADERS)
 
 
 def insert_attendance(id, time):
-    # time_in = self.fetch_time_in(id)
-    # formatted_time = time_in['data']['dawn_by_pk']['clock_in']
     now = datetime.now()
     current_time = time_to_num(now.strftime("%H:%M:%S"))
-    if current_time < MORN_SHIFT_END:
-        client.post_time_in(id, time)
+    requires_cooldown = cooldown(id, time)
+    if current_time < MORN_SHIFT_END and requires_cooldown == False:
+        client.post_time_in_dawn(id, time)
 
 
 def time_to_num(time_str: str) -> int:          # Convert time to seconds
@@ -38,15 +38,15 @@ def time_to_num(time_str: str) -> int:          # Convert time to seconds
     return ss + 60*(mm + 60*hh)
 
 
-insert_attendance(1, 3)
-
-
-def cooldown(id: int, time: str):  # TODO => solve the double tap problem
+def cooldown(id: int, time_in: str) -> bool:
     fetched_time = client.fetch_by_id_from_dawn(id)
     formatted_time = fetched_time['data']['dawn_by_pk']['clock_in']
-    time_in_seconds = time_to_num(formatted_time)
+    previous_time = time_to_num(formatted_time)
+    current_time = time_to_num(time_in)
+    if current_time - previous_time > COOLDOWN_INTERVAL:
+        return True
+    else:
+        return False
 
 
-# def no_out_without_in() {     TODO => If time in exists and another entry is made after 30 mins, that will be registered as clock_out
-
-# }
+print(time_to_num("11:30:00") - time_to_num("11:00:00"))

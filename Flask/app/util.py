@@ -16,25 +16,7 @@ class Client:
         assert request.ok, f"Failed with code {request.status_code}"
         return request.json()
 
-    def post_time_in(self, id, clock_in):  # Inserts clocked in time to db
-        time_in = self.fetch_time_in(id)
-        formatted_time = time_in['data']['dawn_by_pk']['clock_in']
-        # if (formatted_time != clock_in):
-        #     print("Yo the time is equal")
-        #     self.run_query(
-        #         """
-        #     mutation ($id: Int!, $clock_in: time!) {
-        #         update_dawn(where: {id: {_lte: $id}}, _set: { clock_in: $clock_in }) {
-        #             affected_rows
-        #             returning {
-        #                 id
-        #                 clock_in
-        #             }
-        #         }
-        #     }
-        #     """
-        #     )
-        # else:
+    def post_time_in_dawn(self, id, clock_in):  # Inserts clocked in time to db
         self.run_query(
             """
         mutation ($id: Int!, $clock_in: time!) {
