@@ -64,7 +64,7 @@ def time_to_num(time_str: str) -> int:          # Convert time to seconds
 def has_duplicates(_id: int, table_name: str, status: str) -> bool:
     data = client.fetch_by_id(_id, table_name, status)
     extracted_time = data['data'][table_name+'_by_pk']
-    if extracted_time == None:
+    if extracted_time is None:
         return False
     else:
         return True
