@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 import requests
 
 
@@ -21,35 +22,39 @@ class Client:
         assert request.ok, f"Failed with code {request.status_code}"
         return request.json()
 
-    # Inserts clocked in time to db
-    def post_time(self, _id: int, clock: str, day: str, table_name: str, status: str):
+    # inserts clocked in time to db
+    def post_time(self, _id: str, clock: str, day: str, table_name: str, status: str):
         return self.run_query(
             """
-        mutation ($_id: Int!, $clock: time!, $day: time!) {
-            insert_""" + table_name + """_one(objects: {_id: $_id, """ + status + """: $clock, day: $day}) {
-                affected_rows
-                returning {
-                    _id
-                    """ + status + """
-                    date
-                }
+            mutation mark_attendance {
+              insert_""" + table_name + """_one(object: 
+                {
+                  user_id: """ + _id + """, 
+                  """ + status + """: " """ + clock + """ ", 
+                  date: " """ + day + """ ", 
+                })
+              {
+                id
+                user_id
+                clock_in
+                clock_out
+                date
+              }
             }
-        }
         """,
-            {'_id': _id, status: clock, day: day}
         )
 
     # Fetch clock_in or clock_out time for a given id
-    def fetch_by_id(self, _id: int, table_name: str, status: str):
+    def fetch_by_id(self, _id: str, table_name: str, status: str):
+        _date = datetime.now().strftime("%Y-%m-%d")
         return self.run_query(
             """
-                query fetch_by_id($_id: Int!) {
-                    """ + table_name + """_by_pk(_id: $_id) {
-                        """ + status + """
-                    }
-                }
+            query fetch_once {
+              """ + table_name + """(where: {user_id: {_eq: """ + _id + """}, _and: {date: {_eq: " """ + _date + """ "}}}) {
+                """ + status + """
+              }
+            }
             """,
-            {'_id': _id}
         )
 
     def query_for_all(self, _id: str):
@@ -75,15 +80,3 @@ class Client:
         )
 
 
-        # return self.run_query(
-        #     """
-        #         query fetch_by_id($_id: Int!) {
-        #             """+table_name+"""_by_pk(_id: $_id) {
-        #                 clock_in
-        #                 clock_out
-        #                 date
-        #             }
-        #         }
-        #     """,
-        #     {'_id': _id}
-        # )
