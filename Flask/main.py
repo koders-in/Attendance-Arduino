@@ -21,37 +21,37 @@ COOLDOWN_INTERVAL = 1800
 client = Client(url=HASURA_URL, headers=HASURA_HEADERS)
 
 
-def insert_attendance(_id: int, time: str):
+def insert_attendance(_id: int, _time: str):
     current_time = time_to_num(datetime.now().strftime("%H:%M:%S"))
     current_date = datetime.now().strftime("%Y-%m-%d")
     if current_time < MORN_SHIFT_END:
         status = 'dawn'
         if has_duplicates(_id, status, 'clock_in'):
-            if not cooldown(_id, time, status):
+            if not cooldown(_id, _time, status):
                 # Post clock_out in the same dawn table
                 # date_today =
-                client.post_time(_id, time, current_date, status, 'clock_out')
+                client.post_time(_id, _time, current_date, status, 'clock_out')
             else:
                 pass  # TODO => reponse behaviour for cooldown
         else:
             # Post clock_in in the dawn table
-            client.post_time(_id, time, current_date, status, 'clock_in')
+            client.post_time(_id, _time, current_date, status, 'clock_in')
     else:
         status = 'dusk'  # Unused variable
         # Clock_in in dawn == YES
         # Clock_out in dawn == NO
         if has_duplicates(_id, 'dawn', 'clock_in') and has_duplicates(_id, 'dawn', 'clock_out') == False:
-            client.post_time(_id, time, current_date, 'dusk', 'clock_out')
+            client.post_time(_id, _time, current_date, 'dusk', 'clock_out')
 
         # Clock_in in dawn == NO
         # Clock_in in dusk == YES
         if has_duplicates(_id, 'dusk', 'clock_in'):
-            client.post_time(_id, time, current_date, 'dusk', 'clock_out')
+            client.post_time(_id, _time, current_date, 'dusk', 'clock_out')
 
         # Clock_in in dawn == NO
         # Clock_in in dusk == NO
         if not has_duplicates(_id, 'dusk', 'clock_in'):
-            client.post_time(_id, time, current_date, 'dusk', 'clock_in')
+            client.post_time(_id, _time, current_date, 'dusk', 'clock_in')
 
 
 def time_to_num(time_str: str) -> int:  # Convert time to seconds

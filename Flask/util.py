@@ -23,7 +23,7 @@ class Client:
 
     # Inserts clocked in time to db
     def post_time(self, _id: int, clock: str, day: str, table_name: str, status: str):
-        self.run_query(
+        return self.run_query(
             """
         mutation ($_id: Int!, $clock: time!, $day: time!) {
             insert_""" + table_name + """_one(objects: {_id: $_id, """ + status + """: $clock, day: $day}) {
@@ -55,7 +55,7 @@ class Client:
     def query_for_all(self, _id: str):
         return self.run_query(
             """
-            query fetch_by_id {
+            query fetch_by_id @cached {
                     dawn(where: {user_id: {_eq: """ + _id + """ }}, order_by: {date: desc}) {
                         id
                         user_id
