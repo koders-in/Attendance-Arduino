@@ -7,7 +7,7 @@ class Client:
     url: str
     headers: dict
 
-    def run_query(self, query: str, variables: dict, extract=False):
+    def run_query(self, query: str, variables: dict = None, extract=False):
         request = requests.post(
             self.url,
             headers=self.headers,
