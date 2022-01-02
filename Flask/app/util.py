@@ -7,7 +7,8 @@ class Client:
     url: str
     headers: dict
 
-    def run_query(self, query: str, variables: dict = None, extract=False):
+    # def run_query(self, query: str, variables: dict, extract=False):
+    def run_query(self, query: str, variables: dict = None):
         request = requests.post(
             self.url,
             headers=self.headers,
@@ -16,54 +17,48 @@ class Client:
         assert request.ok, f"Failed with code {request.status_code}"
         return request.json()
 
-    def post_time_in_dawn(self, id, clock_in):  # Inserts clocked in time to db
+    # Inserts clocked in time to db
+    def post_time(self, _id: int, clock: str, day: str, table_name: str, status: str):
         self.run_query(
             """
-        mutation ($id: Int!, $clock_in: time!) {
-            insert_dawn_one(objects: {id: $id, clock_in: $clock_in}) {
+        mutation ($_id: Int!, $clock: time!, $day: time!) {
+            insert_"""+table_name+"""_one(objects: {_id: $_id, """ + status + """: $clock, day: $day}) {
                 affected_rows
                 returning {
-                    id
-                    clock_in
+                    _id
+                    """ + status + """
+                    date
                 }
             }
         }
         """,
-            {'id': id, 'clock_in': clock_in}
+            {'_id': _id, status: clock, day: day}
         )
 
-    def fetch_all_entries(self):
-        self.run_query(
-            """
-                query fetch_clock_in {
-                        dawn {
-                            clock_in
-                            id
-                        }
-                }
-            """
-        )
+    # Fetch clock_in or clock_out time for a given id
+    def fetch_by_id(self, _id: int, table_name: str, status: str):
 
-    def fetch_by_id_from_dawn(self, id):
-        return self.run_query(
-            """ 
-            query fetch_by_id($id: Int!) {
-                dawn_by_pk(id: $id) {
-                    clock_in
-                }
-            }
-            """,
-            {'id': id}
-        )
-
-    def fetch_by_id_from_dusk(self, id):
         return self.run_query(
             """
-            query fetch_by_id($id: Int!) {
-                dusk_by_pk(id: $id) {
-                    clock_in
+                query fetch_by_id($_id: Int!) {
+                    """+table_name+"""_by_pk(_id: $_id) {
+                        """+status+"""
+                    }
                 }
-            }
             """,
-            {'id': id}
+            {'_id': _id}
+        )
+
+    def query_for_all(self, _id: int, table_name: str):
+        return self.run_query(
+            """
+                query fetch_by_id($_id: Int!) {
+                    """+table_name+"""_by_pk(_id: $_id) {
+                        clock_in
+                        clock_out
+                        date
+                    }
+                }
+            """,
+            {'_id': _id}
         )

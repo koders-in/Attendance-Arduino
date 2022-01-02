@@ -22,15 +22,38 @@ COOLDOWN_INTERVAL = 1800
 
 client = Client(url=HASURA_URL, headers=HASURA_HEADERS)
 
-# TODO => If clock_in has no value in dawn or dusk, insert as clock_in in the right table. If clock_in exists, register as clock out.
 
+def insert_attendance(_id: int, time: str):
+    current_time = time_to_num(datetime.now().strftime("%H:%M:%S"))
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    if current_time < MORN_SHIFT_END:
+        status = 'dawn'
+        if has_duplicates(_id, status, 'clock_in'):
+            if not cooldown(_id, time, status):
+                # Post clock_out in the same dawn table
+                # date_today =
+                client.post_time(_id, time, current_date, status, 'clock_out')
+            else:
+                pass  # TODO => reponse behaviour for cooldown
+        else:
+            # Post clock_in in the dawn table
+            client.post_time(_id, time, current_date, status, 'clock_in')
+    else:
+        status = 'dusk'
+        # Clock_in in dawn == YES
+        # Clock_out in dawn == NO
+        if has_duplicates(_id, 'dawn', 'clock_in') and has_duplicates(_id, 'dawn', 'clock_out') == False:
+            client.post_time(_id, time, current_date, 'dusk', 'clock_out')
 
-def insert_attendance(id, time):
-    now = datetime.now()
-    current_time = time_to_num(now.strftime("%H:%M:%S"))
-    requires_cooldown = cooldown(id, time)
-    if current_time < MORN_SHIFT_END and requires_cooldown == False:
-        client.post_time_in_dawn(id, time)
+        # Clock_in in dawn == NO
+        # Clock_in in dusk == YES
+        if has_duplicates(_id, 'dusk', 'clock_in'):
+            client.post_time(_id, time, current_date, 'dusk', 'clock_out')
+
+        # Clock_in in dawn == NO
+        # Clock_in in dusk == NO
+        if has_duplicates(_id, 'dusk', 'clock_in') == False:
+            client.post_time(_id, time, current_date, 'dusk', 'clock_in')
 
 
 def time_to_num(time_str: str) -> int:          # Convert time to seconds
@@ -38,15 +61,25 @@ def time_to_num(time_str: str) -> int:          # Convert time to seconds
     return ss + 60*(mm + 60*hh)
 
 
-def cooldown(id: int, time_in: str) -> bool:
-    fetched_time = client.fetch_by_id_from_dawn(id)
-    formatted_time = fetched_time['data']['dawn_by_pk']['clock_in']
+def has_duplicates(_id: int, table_name: str, status: str) -> bool:
+    data = client.fetch_by_id(_id, table_name, status)
+    extracted_time = data['data'][table_name+'_by_pk']
+    if extracted_time == None:
+        return False
+    else:
+        return True
+
+
+def cooldown(_id: int, time: str,  table_name: str) -> bool:
+    fetched_time = client.fetch_by_id(id, table_name)
+    formatted_time = fetched_time['data'][table_name+'_by_pk']['clock_in']
     previous_time = time_to_num(formatted_time)
-    current_time = time_to_num(time_in)
-    if current_time - previous_time > COOLDOWN_INTERVAL:
+    current_time = time_to_num(time)
+    if current_time - previous_time < COOLDOWN_INTERVAL:
         return True
     else:
         return False
 
 
-print(time_to_num("11:30:00") - time_to_num("11:00:00"))
+def get_attendance(_id: int):
+    print(client.query_for_all(_id, 'dawn'))
