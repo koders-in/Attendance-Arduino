@@ -23,35 +23,74 @@ class Client:
         return request.json()
 
     # inserts clocked in time to db
-    def post_time(self, _id: str, clock: str, day: str, table_name: str, status: str):
-        return self.run_query(
+    def post_time(self, user_id: str, _time: str, date: str, column_name: str):
+        self.run_query(
             """
-            mutation mark_attendance {
-              insert_""" + table_name + """_one(object: 
-                {
-                  user_id: """ + _id + """, 
-                  """ + status + """: " """ + clock + """ ", 
-                  date: " """ + day + """ ", 
-                })
-              {
-                id
-                user_id
-                clock_in
-                clock_out
-                date
-              }
+          mutation 
+            insert_attendance(objects: {user_id: $user_id, date: $date, """
+            + status
+            + """_clock_in: $_time}){
+              user_id
+              """
+            + status
+            + """_clock_in
+              date
             }
-        """,
+          }
+        """
         )
 
+    def post_time(self, _id: str, clock: str, day: str, table_name: str, status: str):
+        print("Inside post_time")
+        print(
+            self.run_query(
+                """
+          mutation mark_attendance {
+            insert_"""
+                + table_name
+                + """_one(object: 
+              {
+                user_id: """
+                + _id
+                + """, 
+                """
+                + status
+                + """: " """
+                + clock
+                + """ ", 
+                date: " """
+                + day
+                + """ ", 
+              })
+            {
+              id
+              user_id
+              clock_in
+              clock_out
+              date
+            }
+          }
+      """,
+            )
+        )
+        print("query suc")
+
     # Fetch clock_in or clock_out time for a given id
-    def fetch_by_id(self, _id: str, table_name: str, status: str):
+    def fetch_by_id(self, user_id: str, status: str):
         _date = datetime.now().strftime("%Y-%m-%d")
         return self.run_query(
             """
             query fetch_once {
-              """ + table_name + """(where: {user_id: {_eq: """ + _id + """}, _and: {date: {_eq: " """ + _date + """ "}}}) {
-                """ + status + """
+              """
+            + table_name
+            + """(where: {user_id: {_eq: """
+            + _id
+            + """}, _and: {date: {_eq: " """
+            + _date
+            + """ "}}}) {
+                """
+            + status
+            + """
               }
             }
             """,
@@ -61,14 +100,18 @@ class Client:
         return self.run_query(
             """
             query fetch_by_id @cached {
-                    dawn(where: {user_id: {_eq: """ + _id + """ }}, order_by: {date: desc}) {
+                    dawn(where: {user_id: {_eq: """
+            + _id
+            + """ }}, order_by: {date: desc}) {
                         id
                         user_id
                         date
                         clock_in
                         clock_out
                     }
-                    dusk(where: {user_id: {_eq: """ + _id + """ }}, order_by: {date: desc}) {
+                    dusk(where: {user_id: {_eq: """
+            + _id
+            + """ }}, order_by: {date: desc}) {
                     id
                     user_id
                     date
@@ -78,5 +121,3 @@ class Client:
                 }
             """
         )
-
-
