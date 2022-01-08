@@ -18,83 +18,43 @@ COOLDOWN_INTERVAL = 1800
 
 client = Client(url=HASURA_URL, headers=HASURA_HEADERS)
 
-# TODO => Fix the fetch by id method to retrieve particular columns of data
-# TODO => Fix the post_time method to post time in particular columns of data
 
-# FIXME => Convert the time to seconds for evaluation
-# FIXME => For an input field update the time by verifying the date
+def search_data(user_id):
+    fetched_records = client.fetch_all_by_id(user_id)
+    array_of_objects = fetched_records["data"]["attendance"]
+    for object in array_of_objects:
+        if object["user_id"] == user_id:
+            return object
+
+
 def insert_attendance(user_id: str, _time: str):
     current_time = time_to_num(_time)
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    # Store time data from the morning
-    dawn_clock_in = client.fetch_by_id(user_id, "dawn_clock_in")
-    dawn_clock_out = client.fetch_by_id(user_id, "dawn_clock_out")
-    dawn_clock_out_value = dawn_clock_out["data"]["attendance"][dawn_clock_out]
-    dawn_clock_in_value = dawn_clock_in["data"]["attendance"][dawn_clock_in]
-
     # Store time data from the evening
-    dusk_clock_in = client.fetch_by_id(user_id, "dusk_clock_in")
-    dusk_clock_out = client.fetch_by_id(user_id, "dusk_clock_out")
-    dusk_clock_out_value = dusk_clock_out["data"]["attendance"][dusk_clock_out]
-    dusk_clock_in_value = dusk_clock_in["data"]["attendance"][dusk_clock_in]
+    dusk_clock_in_value = search_data(user_id)["dusk_clock_in"]
 
     if current_time < MORN_SHIFT_END:  # Came morning, left morning
-        if dawn_clock_in_value == None:
-            client.post_time(user_id, _time, current_date, "dawn_clock_in")
-        elif dawn_clock_in_value is not None and dawn_clock_out_value is None:
-            client.post_time(user_id, _time, current_date, "dawn_clock_out")
-    else:
+        if client.fetch_all_by_id(user_id)["data"]["attendance"] == []:
+            client.post_time_in(
+                user_id, _time, current_date, current_date, "dawn_clock_in"
+            )
+        else:
+            client.post_time_out(user_id, _time, current_date, "dawn_clock_out")
+    elif current_time > MORN_SHIFT_END:
+        # Retrieve time data from the morning
+        dawn_clock_out_value = search_data(user_id)["dawn_clock_out"]
+        dawn_clock_in_value = search_data(user_id)["dawn_clock_in"]
         if (
             dawn_clock_in_value is not None and dawn_clock_out_value is None
         ):  # Came morning, left evening
-            client.post_time(user_id, _time, current_date, "dusk_clock_out")
-        elif dusk_clock_in is None:
-            client.post_time(
+            client.post_time_out(user_id, _time, current_date, "dusk_clock_out")
+        elif dusk_clock_in_value is None:
+            client.post_time_in(
                 user_id, _time, current_date, "dusk_clock_in"
             )  # Came evening left, evening
-        elif dusk_clock_in is not None:
-            client.post_time(user_id, _time, current_date, "dusk_clock_out")
-
-
-# def insert_attendance(_id: str, _time: str):
-#     current_time = time_to_num(_time)
-#     current_date = datetime.now().strftime("%Y-%m-%d")
-#     if current_time < MORN_SHIFT_END:
-#         status = "dawn"
-#         if has_duplicates(_id, status, "clock_in"):
-#             if not cooldown(_id, _time, status):
-#                 # Post clock_out in the same dawn table
-#                 # date_today =
-#                 return client.post_time(_id, _time, current_date, status, "clock_out")
-#             else:
-#                 return "Wait for 5 minutes before marking your attendance again"
-#         else:
-#             # Post clock_in in the dawn table
-#             return client.post_time(_id, _time, current_date, status, "clock_in")
-#     else:
-#         status = "dusk"  # Unused variable
-#         print("Status set to dusk")
-#         # Clock_in in dawn == YES
-#         # Clock_out in dawn == NO
-#         if (
-#             has_duplicates(_id, "dawn", "clock_in")
-#             and has_duplicates(_id, "dawn", "clock_out") == False
-#         ):
-#             print("Time posted in clock_out at dusk when clock_in was in dawn")
-#             return client.post_time(_id, _time, current_date, "dusk", "clock_out")
-
-#         # Clock_in in dawn == NO
-#         # Clock_in in dusk == YES
-#         if has_duplicates(_id, "dusk", "clock_in"):
-#             print("Time posted in clock_out at dusk when clock_in was in dusk")
-#             return client.post_time(_id, _time, current_date, "dusk", "clock_out")
-
-#         # Clock_in in dawn == NO
-#         # Clock_in in dusk == NO
-#         if not has_duplicates(_id, "dusk", "clock_in"):
-#             print('Time posted in clock_in in dusk if')
-#             return client.post_time(_id, _time, current_date, "dusk", "clock_in")
+        elif dusk_clock_in_value is not None:
+            client.post_time_out(user_id, _time, current_date, "dusk_clock_out")
 
 
 def time_to_num(time_str: str) -> int:  # Convert time to seconds
@@ -134,3 +94,10 @@ def cooldown(_id: str, cooldown_timer: str, table_name: str) -> bool:
 
 def get_attendance(_id: str):
     return client.query_for_all(_id)
+
+
+insert_attendance("5", "11:00:00")
+insert_attendance("5", "17:00:00")
+
+# temp = search_data("2")["dawn_clock_out"]
+# print(temp)
