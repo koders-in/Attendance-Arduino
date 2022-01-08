@@ -12,7 +12,7 @@ class Client:
         self.url = url
         self.headers = headers
 
-    # def run_query(self, query: str, variables: dict, extract=False):
+    # Helper function to make graphql queries
     def run_query(self, query: str, variables: dict = None):
         request = requests.post(
             self.url,
@@ -22,22 +22,38 @@ class Client:
         assert request.ok, f"Failed with code {request.status_code}"
         return request.json()
 
-    # inserts clocked in time to db
-    def post_time(self, user_id: str, _time: str, date: str, column_name: str):
-        self.run_query(
+    # Makes mutations to post attendance values in table
+    def post_time_in(self, user_id: str, _time: str, date: str, status: str):
+        return self.run_query(
             """
-          mutation ($user_id: String!, $_time: time!, date: date!)
-            insert_attendance(objects: {user_id: $user_id, date: $date, """
-            + column_name
-            + """_clock_in: $_time}){
-              user_id
-              """
-            + column_name
+        mutation insert_time($user_id: String!, $_time: time!, $date: date!){
+         insert_attendance_one(object: {user_id: $user_id, """
+            + status
+            + """_clock_in: $_time, date: $date}) {
+            user_id
+            date
+            """
+            + status
             + """_clock_in
-              date
-            }
           }
-        """
+        }  
+        """,
+            {"user_id": user_id, "_time": _time, "date": date},
+        )
+
+    # Updates the clock_out column in the table where the
+    def post_time_out(self, user_id: str, _time: str, date: str, status: str):
+        return self.run_query(
+            """
+        mutation update_clock_out($user_id: String!, $_time: time!, $date: date!){
+            update_attendance(_set: {"""
+            + status
+            + """_clock_out: $_time}, where: {user_id: {_eq: $user_id}, _and: {date: {_eq: $date}}}) {
+                affected_rows
+            }
+        }
+        """,
+            {"user_id": user_id, "_time": _time, "date": date},
         )
 
     # Fetch all the data for a given user_id
