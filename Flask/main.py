@@ -31,30 +31,24 @@ def insert_attendance(user_id: str, _time: str):
     current_time = time_to_num(_time)
     current_date = datetime.now().strftime("%Y-%m-%d")
 
-    # Store time data from the evening
-    dusk_clock_in_value = search_data(user_id)["dusk_clock_in"]
-
     if current_time < MORN_SHIFT_END:  # Came morning, left morning
         if client.fetch_all_by_id(user_id)["data"]["attendance"] == []:
-            client.post_time_in(
-                user_id, _time, current_date, current_date, "dawn_clock_in"
-            )
+            client.post_time_in(user_id, _time, current_date, "dawn")
         else:
-            client.post_time_out(user_id, _time, current_date, "dawn_clock_out")
+            client.post_time_out(user_id, _time, current_date, "dawn")
     elif current_time > MORN_SHIFT_END:
-        # Retrieve time data from the morning
-        dawn_clock_out_value = search_data(user_id)["dawn_clock_out"]
-        dawn_clock_in_value = search_data(user_id)["dawn_clock_in"]
+        # Came in the evening
+        if client.fetch_all_by_id(user_id)["data"]["attendance"] == []:
+            client.post_time_in(user_id, _time, current_date, "dusk")
+        # Leaving in the evening
+        if search_data(user_id)["dusk_clock_in"] is not None:
+            client.post_time_out(user_id, _time, current_date, "dusk")
+        # Came in the morning and is leaving in the evening
         if (
-            dawn_clock_in_value is not None and dawn_clock_out_value is None
-        ):  # Came morning, left evening
-            client.post_time_out(user_id, _time, current_date, "dusk_clock_out")
-        elif dusk_clock_in_value is None:
-            client.post_time_in(
-                user_id, _time, current_date, "dusk_clock_in"
-            )  # Came evening left, evening
-        elif dusk_clock_in_value is not None:
-            client.post_time_out(user_id, _time, current_date, "dusk_clock_out")
+            search_data(user_id)["dawn_clock_in"] is not None
+            and search_data(user_id)["dawn_clock_out"] is None
+        ):
+            client.post_time_out(user_id, _time, current_date, "dusk")
 
 
 def time_to_num(time_str: str) -> int:  # Convert time to seconds
@@ -92,12 +86,5 @@ def cooldown(_id: str, cooldown_timer: str, table_name: str) -> bool:
         return False
 
 
-def get_attendance(_id: str):
-    return client.query_for_all(_id)
-
-
-insert_attendance("5", "11:00:00")
-insert_attendance("5", "17:00:00")
-
-# temp = search_data("2")["dawn_clock_out"]
-# print(temp)
+def get_attendance(user_id: str):
+    return client.fetch_all_by_id(user_id)
