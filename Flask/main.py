@@ -35,14 +35,22 @@ def insert_attendance(user_id: str, _time: str):
         if client.fetch_all_by_id(user_id)["data"]["attendance"] == []:
             client.post_time_in(user_id, _time, current_date, "dawn")
         else:
-            client.post_time_out(user_id, _time, current_date, "dawn")
+            previous_time = search_data(user_id)["dawn_clock_in"]
+            if current_time - previous_time < COOLDOWN_INTERVAL:
+                print("Please wait for 5 mins before trying again")
+            else:
+                client.post_time_out(user_id, _time, current_date, "dawn")
     elif current_time > MORN_SHIFT_END:
         # Came in the evening
         if client.fetch_all_by_id(user_id)["data"]["attendance"] == []:
             client.post_time_in(user_id, _time, current_date, "dusk")
         # Leaving in the evening
         if search_data(user_id)["dusk_clock_in"] is not None:
-            client.post_time_out(user_id, _time, current_date, "dusk")
+            previous_time = search_data(user_id)["dawn_clock_in"]
+            if current_time - previous_time < COOLDOWN_INTERVAL:
+                print("Please wait for 5 mins before trying again")
+            else:
+                client.post_time_out(user_id, _time, current_date, "dusk")
         # Came in the morning and is leaving in the evening
         if (
             search_data(user_id)["dawn_clock_in"] is not None
@@ -54,36 +62,6 @@ def insert_attendance(user_id: str, _time: str):
 def time_to_num(time_str: str) -> int:  # Convert time to seconds
     hh, mm, ss = map(int, time_str.split(":"))
     return ss + 60 * (mm + 60 * hh)
-
-
-def has_duplicates(_id: str, table_name: str, status: str) -> bool:
-    data = client.fetch_by_id(_id, table_name, status)
-    try:
-        extracted_time = data["data"][table_name][0][status]
-    except IndexError:
-        return False
-    except TypeError:
-        return False
-    if extracted_time is None:
-        return False
-    else:
-        return True
-
-
-def cooldown(_id: str, cooldown_timer: str, table_name: str) -> bool:
-    current_time = time_to_num(datetime.now().strftime("%H:%M:%S"))
-    if current_time < MORN_SHIFT_END:
-        status = "dawn"
-    else:
-        status = "dusk"
-    fetched_time = client.fetch_by_id(_id, table_name, status)
-    formatted_time = fetched_time["data"][table_name + "_by_pk"]["clock_in"]
-    previous_time = time_to_num(formatted_time)
-    current_time = time_to_num(cooldown_timer)
-    if current_time - previous_time < COOLDOWN_INTERVAL:
-        return True
-    else:
-        return False
 
 
 def get_attendance(user_id: str):
