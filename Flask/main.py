@@ -10,56 +10,71 @@ load_dotenv(dotenv_path)
 HASURA_URL = os.environ.get("HASURA_URL")
 HASURA_HEADERS = {"X-Hasura-Admin-Secret": os.environ.get("SECRET_KEY")}
 
-MORN_SHIFT_START = 7260
-MORN_SHIFT_END = 48600
-EVENING_SHIFT_START = 48660
-EVENING_SHIFT_END = 7200
-COOLDOWN_INTERVAL = 1800
+# Morning shift starts from 02:00 AM
+# Morning shift ends at 01:30 PM
+# Evening Shift starts from 01:31 PM
+# Evening Shift ends at 01:59 AM
+# Cooldown interval should be of 30 minutes
+
 
 client = Client(url=HASURA_URL, headers=HASURA_HEADERS)
 
+
+def get_shift(_time: time):
+    _time = _time.time()
+    begin_time = time(2,00)
+    end_time = time(13,30)
+    if begin_time <= _time <= end_time:
+        shift = "dawn"
+    else:
+        shift = "dusk"
+    return shift
+
+
+def is_cooldown(user_id):
 
 def search_data(user_id):
     fetched_records = client.fetch_all_by_id(user_id)
     array_of_objects = fetched_records["data"]["attendance"]
     for object in array_of_objects:
         if object["user_id"] == user_id:
+            print(object)
             return object
 
 
 def insert_attendance(user_id: str, _time: str):
-    current_time = time_to_num(_time)
     current_date = datetime.now().strftime("%Y-%m-%d")
+    print(current_date)
+    print(_time)
 
-    if current_time < MORN_SHIFT_END:  # Came morning, left morning
-        if client.fetch_all_by_id(user_id)["data"]["attendance"] == []:
-            client.post_time_in(user_id, _time, current_date, "dawn")
+    if _time < MORN_SHIFT_END:  # TODO => Date time object should be compared
+        if not client.fetch_all_by_id(user_id)["data"]["attendance"]:
+            return client.post_time_in(user_id, _time, current_date, "dawn")
         else:
             previous_time = search_data(user_id)["dawn_clock_in"]
-            if current_time - previous_time < COOLDOWN_INTERVAL:
-                print("Please wait for 5 mins before trying again")
-            else:
-                client.post_time_out(user_id, _time, current_date, "dawn")
+            previous_time = time_to_num(previous_time)
+            # if current_time - previous_time < COOLDOWN_INTERVAL:
+            #     return "Please wait for 5 mins before trying again"
+            # else:
+            return client.post_time_out(user_id, _time, current_date, "dawn")
     elif current_time > MORN_SHIFT_END:
-        # Came in the evening
         if client.fetch_all_by_id(user_id)["data"]["attendance"] == []:
-            client.post_time_in(user_id, _time, current_date, "dusk")
-        # Leaving in the evening
+            return client.post_time_in(user_id, _time, current_date, "dusk")
         if search_data(user_id)["dusk_clock_in"] is not None:
             previous_time = search_data(user_id)["dawn_clock_in"]
-            if current_time - previous_time < COOLDOWN_INTERVAL:
-                print("Please wait for 5 mins before trying again")
-            else:
-                client.post_time_out(user_id, _time, current_date, "dusk")
-        # Came in the morning and is leaving in the evening
+            previous_time = time_to_num(previous_time)
+            # if current_time - previous_time < COOLDOWN_INTERVAL:
+            #     return "Please wait for 5 mins before trying again"
+            # else:
+            return client.post_time_out(user_id, _time, current_date, "dusk")
         if (
             search_data(user_id)["dawn_clock_in"] is not None
             and search_data(user_id)["dawn_clock_out"] is None
         ):
-            client.post_time_out(user_id, _time, current_date, "dusk")
+            return client.post_time_out(user_id, _time, current_date, "dusk")
 
 
-def time_to_num(time_str: str) -> int:  # Convert time to seconds
+def time_to_num(time_str: str) -> int:  
     hh, mm, ss = map(int, time_str.split(":"))
     return ss + 60 * (mm + 60 * hh)
 

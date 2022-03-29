@@ -1,10 +1,9 @@
 from redminelib import Redmine
-import datetime
 import json
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 from main import get_attendance, insert_attendance
-from datetime import datetime
+import datetime
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -17,13 +16,13 @@ app = Flask(__name__)
 @cross_origin()
 def process_attendance(_id):
     if _id is None:
-        return "Can't find id"
+        return "CAN'T FIND ID"
 
-    if request.method == 'GET':
+    if request.method == "GET":
         return get_attendance(_id)
 
-    if request.method == 'POST':
-        _time = datetime.now().strftime("%H:%M:%S")
+    if request.method == "POST":
+        _time = datetime.datetime.now().strftime("%H:%M:%S")
         return insert_attendance(_id, _time)
 
 
@@ -31,10 +30,12 @@ def process_attendance(_id):
 @cross_origin()
 def send_user_data():
     if request.method == 'GET':
-        if request.args.get('username') or request.args.get('password') is None:
-            return "Server is running... Hello world!"
-        username = request.args.get('username')
-        password = request.args.get('password')
+        return "Server is running... Hello world!"
+    if request.method == 'POST':
+        if not request.get_json():
+            return "Something went wrong."
+        username = request.get_json()["username"]
+        password = request.get_json()["password"]
 
         redmine = Redmine('https://kore.koders.in', username=username, password=password)
 
@@ -93,4 +94,4 @@ def send_user_data():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000)
+    app.run(host='0.0.0.0', debug=True, port=3000)
