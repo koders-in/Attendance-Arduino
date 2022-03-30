@@ -1,76 +1,120 @@
-from dataclasses import dataclass
-from datetime import datetime
-import requests
+import os
+from dotenv import load_dotenv
+
+from gql import Client, gql
+from gql.transport.aiohttp import AIOHTTPTransport
 
 
-@dataclass
-class Client:
-    url: str
-    headers: dict
+load_dotenv()   # env file is in the same dir /Flask/.env
+client = Client(
+    transport=AIOHTTPTransport(
+        url=os.getenv('HASURA_URL'),
+        headers={"X-Hasura-Admin-Secret": os.getenv("SECRET_KEY")}
+    ),
+    fetch_schema_from_transport=True
+)
 
-    def __init__(self, url, headers):
-        self.url = url
-        self.headers = headers
 
-    # Helper function to make graphql queries
-    def run_query(self, query: str, variables: dict = None):
-        request = requests.post(
-            self.url,
-            headers=self.headers,
-            json={"query": query, "variables": variables},
+# date str format: YYYY-MM-DD
+# time str format: HH:MM:SS
+
+def gql_fetch_user_attendance(user_id: str, date: str = None):
+    if date is None:
+        # get all data for user if no date is provided
+        query = gql(
+            '''
+            query getData($user_id: String!) {
+                attendance(where: {user_id: {_eq: $user_id}}) {
+                    date
+                    dawn_clock_in
+                    dawn_clock_out
+                    dusk_clock_in
+                    dusk_clock_out
+                    _id
+                    user_id
+                }
+            }
+            '''
         )
-        assert request.ok, f"Failed with code {request.status_code}"
-        return request.json()
-
-    # Makes mutations to post attendance values in table
-    def post_time_in(self, user_id: str, _time: str, date: str, status: str):
-        return self.run_query(
-            """
-        mutation insert_time($user_id: String!, $_time: time!, $date: date!){
-         insert_attendance_one(object: {user_id: $user_id, """
-            + status
-            + """_clock_in: $_time, date: $date}) {
-            user_id
-            date
-            """
-            + status
-            + """_clock_in
-          }
-        }  
-        """,
-            {"user_id": user_id, "_time": _time, "date": date},
+        variables = {
+            "user_id": user_id
+        }
+    else:
+        # get data for specific date
+        query = gql(
+            '''
+            query getData($user_id: String!, $date: date!) {
+                attendance(where: {user_id: {_eq: $user_id}, date: {_eq: $date}}) {
+                    date
+                    dawn_clock_in
+                    dawn_clock_out
+                    dusk_clock_in
+                    dusk_clock_out
+                    _id
+                    user_id
+                }
+            }
+            '''
         )
 
-    # Updates the clock_out column in the table where the
-    def post_time_out(self, user_id: str, _time: str, date: str, status: str):
-        return self.run_query(
-            """
-        mutation update_clock_out($user_id: String!, $_time: time!, $date: date!){
-            update_attendance(_set: {"""
-            + status
-            + """_clock_out: $_time}, where: {user_id: {_eq: $user_id}, _and: {date: {_eq: $date}}}) {
-                affected_rows
+        variables = {
+            "user_id": user_id,
+            "date": date
+        }
+
+    try:
+        result = client.execute(query, variable_values=variables)
+        return result
+    except Exception as error:
+        return error
+
+
+def gql_add_user_attendance(user_id: str, date: str, shift: str, time: str):
+    query = gql(
+        '''
+        mutation addData($date: date!, $time: time!, $user_id: String!) {
+            insert_attendance_one(object: {date: $date, '''+shift+'''_clock_in: $time, user_id: $user_id}) {
+                _id
             }
         }
-        """,
-            {"user_id": user_id, "_time": _time, "date": date},
-        )
+        '''
+    )
 
-    # Fetch all the data for a given user_id
-    def fetch_all_by_id(self, user_id: str):
-        return self.run_query(
-            """
-        query fetch_all_records($user_id: String!) {
-          attendance(where: {user_id: {_eq: $user_id}}) {
-            user_id
-            dusk_clock_out
-            dusk_clock_in
-            dawn_clock_out
-            dawn_clock_in
-            date
-          }
-        }
+    variables = {
+        "user_id": user_id,
+        "date": date,
+        "time": time
+    }
 
-        """,
-            {"user_id": user_id},
-        )
+    try:
+        result = client.execute(query, variable_values=variables)
+        return result
+    except Exception as error:
+        return error
+
+
+def gql_update_user_attendance(user_id: str, date: str, shift: str, time: str):
+
+    if shift == "dusk":
+        # query -> clock out dawn if dawn clock in exists + clock in dusk
+        pass
+    elif shift == "dawn":
+        # query -> clock out dusk if dusk clock in exists + clock in dawn
+        pass
+
+    query = gql(
+        '''
+        '''
+    )
+
+    variables = {
+        "user_id": user_id,
+        "date": date,
+        "time": time
+    }
+
+    try:
+        result = client.execute(query, variable_values=variables)
+        return result
+    except Exception as error:
+        return error
