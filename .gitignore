@@ -102,7 +102,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+Flask/.env
 .venv
 env/
 venv/
@@ -133,3 +133,6 @@ env
 
 # Mac OS config files
 .DS_store
+
+# PyCharm
+.idea
