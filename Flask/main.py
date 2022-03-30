@@ -1,5 +1,5 @@
-from datetime import datetime, time, timedelta
-from util import gql_fetch_user_attendance
+from datetime import datetime, timedelta
+from util import gql_fetch_user_attendance, gql_add_user_attendance
 
 # Morning shift starts from 02:00 AM
 # Morning shift ends at 01:30 PM
@@ -7,68 +7,62 @@ from util import gql_fetch_user_attendance
 # Evening Shift ends at 01:59 AM
 # Cooldown interval should be of 30 minutes
 
-
-def get_shift(_time: time):
-    begin_time = time(2, 00)
-    end_time = time(13, 30)
-    if begin_time <= _time <= end_time:
-        shift = "dawn"
-    else:
-        shift = "dusk"
-    return shift
+COOLDOWN_INTERVAL = 30  # in minutes
 
 
-def is_cooldown(attendance_of_user: dict, shift: str):
+def is_cooldown(attendance_of_user: dict):
+    """
+    Helper function to check cooldown status
+
+    :param attendance_of_user: dict of user record of a particular date
+    :return: cooldown status, True or False
+    """
     current_time = datetime.now().time()
     user_latest_time = None
 
+    # check for latest time entry in record
     for key, value in attendance_of_user.items():
-        if shift in key and value is not None:
+        if 'clock' in key and value is not None:
             user_latest_time = value
 
     user_latest_time = datetime.strptime(user_latest_time, "%H:%M:%S").time()
+    # calculate time diff
     time_diff = timedelta(hours=current_time.hour, minutes=current_time.minute, seconds=current_time.second) - \
                 timedelta(hours=user_latest_time.hour, minutes=user_latest_time.minute, seconds=user_latest_time.second)
-    print(current_time)
-    print(user_latest_time)
-    if time_diff.total_seconds()/60 < 30:
+
+    if time_diff.total_seconds()/60 < COOLDOWN_INTERVAL:
         return True
     else:
         return False
 
 
 def insert_attendance(user_id: str, _time: str):
+    """
+    Post/Update user's attendance
+    """
     current_date = datetime.now().strftime("%Y-%m-%d")
-    print(current_date)
-    print(_time)
-    _time = datetime.strptime(_time, "%H:%M:%S").time()
-    print(get_shift(_time))
-
-    if get_shift(_time) == "dawn":
-        # get user's latest attendance for current date
-        attendance = gql_fetch_user_attendance(user_id=user_id, date=current_date)['attendance']
-        if len(attendance) == 0:
-            # first punch of the day
-            # insert new entry for current date
-            pass
+    attendance = gql_fetch_user_attendance(user_id=int(user_id), date=current_date)['attendance']
+    if len(attendance) == 0:
+        # new record for current date
+        return gql_add_user_attendance(user_id=int(user_id), time=_time, date=current_date)
+    else:
+        # existing attendance record
+        record = attendance[0]
+        if record['clock_out'] is None:
+            # update clock out
+            if is_cooldown(record):
+                return "cooldown initiated. try again later."
+            return gql_add_user_attendance(is_clock_in=False, attendance_id=record['id'], time=_time)
         else:
-            # second punch of the day
-            if is_cooldown(attendance_of_user=attendance[0], shift="dawn"):
-                return "cooldown period initiated. retry again after some time."
-            else:
-                # dawn clock out
-                pass
-
-    elif get_shift(_time) == "dusk":
-        # get user's latest attendance for current date
-        attendance = gql_fetch_user_attendance(user_id=user_id, date=current_date)['attendance']
-        if len(attendance) != 0:
-            # dusk clock out
-            pass
-        else:
-            # dusk clock in by update attendance for current date
-            pass
+            # new record for same day => clock in
+            if is_cooldown(record):
+                return "cooldown initiated. try again later."
+            return gql_add_user_attendance(user_id=int(user_id), time=_time, date=current_date)
 
 
 def get_attendance(user_id: str):
-    return gql_fetch_user_attendance(user_id=user_id)
+    """
+    Get attendance record for a particular user.
+    TODO => Add offset fetching
+    """
+    return gql_fetch_user_attendance(user_id=int(user_id))
