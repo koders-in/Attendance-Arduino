@@ -18,20 +18,27 @@ client = Client(
 # date str format: YYYY-MM-DD
 # time str format: HH:MM:SS
 
-def gql_fetch_user_attendance(user_id: str, date: str = None):
+def gql_fetch_user_attendance(user_id: int, date: str = None):
+    """
+    GQL query to fetch user's all records for attendance or for a particular date
+
+    :param user_id: unique user id
+    :param date: date string in YYYY-MM-DD format
+    :return: GQL result dict
+    """
     if date is None:
         # get all data for user if no date is provided
+        # TODO => add offset
         query = gql(
             '''
-            query getData($user_id: String!) {
+            query getData($user_id: Int!) {
                 attendance(where: {user_id: {_eq: $user_id}}) {
+                    id
                     date
-                    dawn_clock_in
-                    dawn_clock_out
-                    dusk_clock_in
-                    dusk_clock_out
-                    _id
                     user_id
+                    clock_in
+                    clock_out
+                    comment
                 }
             }
             '''
@@ -43,15 +50,14 @@ def gql_fetch_user_attendance(user_id: str, date: str = None):
         # get data for specific date
         query = gql(
             '''
-            query getData($user_id: String!, $date: date!) {
-                attendance(where: {user_id: {_eq: $user_id}, date: {_eq: $date}}) {
+            query getData($user_id: Int!, $date: date!) {
+                attendance(where: {user_id: {_eq: $user_id}, date: {_eq: $date}}, limit: 1, order_by: {id: desc}) {
+                    id
                     date
-                    dawn_clock_in
-                    dawn_clock_out
-                    dusk_clock_in
-                    dusk_clock_out
-                    _id
                     user_id
+                    clock_in
+                    clock_out
+                    comment
                 }
             }
             '''
@@ -69,49 +75,63 @@ def gql_fetch_user_attendance(user_id: str, date: str = None):
         return error
 
 
-def gql_add_user_attendance(user_id: str, date: str, shift: str, time: str):
-    query = gql(
-        '''
-        mutation addData($date: date!, $time: time!, $user_id: String!) {
-            insert_attendance_one(object: {date: $date, '''+shift+'''_clock_in: $time, user_id: $user_id}) {
-                _id
+def gql_add_user_attendance(time: str, user_id: int = None, date: str = None, attendance_id: int = None,
+                            is_clock_in: bool = True, comment: str = None):
+    """
+    GQL mutation to insert/update attendance
+    :param time: time string in HH:MM:SS format
+    :param user_id: unique user id
+    :param date: date string in YYYY-MM-DD format
+    :param attendance_id: unique attendance id
+    :param is_clock_in: toggle for insert attendance (clock_in) or update attendance (clock_out), default True i.e. insert attendance
+    :param comment: comment on attendance record
+    :return: GQL result dict
+    """
+    if is_clock_in:
+        # attendance clock in => create new record
+        if user_id is None or date is None or time is None:
+            return "ERROR: arguments missing, user_id, date and time are required."
+
+        query = gql(
+            '''
+            mutation addNewAttendance($user_id: Int!, $time: time!, $date: date!, $comment: String) {
+                insert_attendance_one(object: {clock_in: $time, user_id: $user_id, date: $date, comment: $comment}) {
+                    id
+                    user_id
+                    date
+                }
             }
+            '''
+        )
+
+        variables = {
+            "user_id": user_id,
+            "date": date,
+            "time": time,
+            "comment": comment
         }
-        '''
-    )
+    else:
+        # attendance clock out => update existing record using attendance record id
+        if attendance_id is None or time is None:
+            return "ERROR: arguments missing, attendance_id and time are required."
 
-    variables = {
-        "user_id": user_id,
-        "date": date,
-        "time": time
-    }
+        query = gql(
+            '''
+            mutation updateAttendance($id: Int!, $time: time!, $comment: String) {
+                update_attendance_by_pk(pk_columns: {id: $id}, _set: {clock_out: $time, comment: $comment}) {
+                    id
+                    user_id
+                    date
+                }
+            }
+            '''
+        )
 
-    try:
-        result = client.execute(query, variable_values=variables)
-        return result
-    except Exception as error:
-        return error
-
-
-def gql_update_user_attendance(user_id: str, date: str, shift: str, time: str):
-
-    if shift == "dusk":
-        # query -> clock out dawn if dawn clock in exists + clock in dusk
-        pass
-    elif shift == "dawn":
-        # query -> clock out dusk if dusk clock in exists + clock in dawn
-        pass
-
-    query = gql(
-        '''
-        '''
-    )
-
-    variables = {
-        "user_id": user_id,
-        "date": date,
-        "time": time
-    }
+        variables = {
+            "id": attendance_id,
+            "time": time,
+            "comment": comment
+        }
 
     try:
         result = client.execute(query, variable_values=variables)
