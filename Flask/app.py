@@ -12,18 +12,20 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 app = Flask(__name__)
 
 
-@app.route('/<_id>', methods=['POST', 'GET'])
+@app.route('/', methods=['POST', 'GET'])
 @cross_origin()
-def process_attendance(_id):
-    if _id is None:
-        return "CAN'T FIND ID"
+def process_attendance():
+    try:
+        user_id = request.get_json()['user_id']
+    except KeyError as key:
+        return f"unable to find {key} in request body"
 
     if request.method == "GET":
-        return get_attendance(_id)
+        return get_attendance(user_id)
 
     if request.method == "POST":
         _time = datetime.datetime.now().strftime("%H:%M:%S")
-        return insert_attendance(_id, _time)
+        return insert_attendance(user_id, _time)
 
 
 # @app.route('/', methods=['POST', 'GET'])
