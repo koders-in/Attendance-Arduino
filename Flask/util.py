@@ -1,11 +1,9 @@
 import os
-from dotenv import load_dotenv
 
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 
 
-load_dotenv()   # env file is in the same dir /Flask/.env
 client = Client(
     transport=AIOHTTPTransport(
         url=os.getenv('HASURA_URL'),

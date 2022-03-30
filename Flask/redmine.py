@@ -1,11 +1,8 @@
 from redminelib import Redmine
-from dotenv import load_dotenv
 import datetime
 import requests
 import json
 import os
-
-load_dotenv()   # env file is in the same dir /Flask/.env
 
 
 def get_profile_picture(user_id):

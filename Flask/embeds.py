@@ -1,9 +1,7 @@
 from discord_webhook import DiscordWebhook, DiscordEmbed
 from redmine import get_user_data
-from dotenv import load_dotenv
 import os
 
-load_dotenv()   # env file is in the same dir /Flask/.env
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 
