@@ -1,11 +1,6 @@
 from datetime import datetime, timedelta
 from util import gql_fetch_user_attendance, gql_add_user_attendance
-
-# Morning shift starts from 02:00 AM
-# Morning shift ends at 01:30 PM
-# Evening Shift starts from 01:31 PM
-# Evening Shift ends at 01:59 AM
-# Cooldown interval should be of 30 minutes
+from embeds import send_webhook
 
 COOLDOWN_INTERVAL = 30  # in minutes
 
@@ -44,6 +39,7 @@ def insert_attendance(user_id: str, _time: str):
     attendance = gql_fetch_user_attendance(user_id=int(user_id), date=current_date)['attendance']
     if len(attendance) == 0:
         # new record for current date
+        send_webhook(int(user_id), 'green')
         return gql_add_user_attendance(user_id=int(user_id), time=_time, date=current_date)
     else:
         # existing attendance record
@@ -52,11 +48,13 @@ def insert_attendance(user_id: str, _time: str):
             # update clock out
             if is_cooldown(record):
                 return "cooldown initiated. try again later."
+            send_webhook(int(user_id), 'red')
             return gql_add_user_attendance(is_clock_in=False, attendance_id=record['id'], time=_time)
         else:
             # new record for same day => clock in
             if is_cooldown(record):
                 return "cooldown initiated. try again later."
+            send_webhook(int(user_id), 'green')
             return gql_add_user_attendance(user_id=int(user_id), time=_time, date=current_date)
 
 

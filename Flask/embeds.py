@@ -1,47 +1,33 @@
 from discord_webhook import DiscordWebhook, DiscordEmbed
+from redmine import get_user_data
+from dotenv import load_dotenv
+import os
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/958342332313378886/syQp5KZHa2gF583OiSUNOG_E_JYgssupiAyyKs616jmB6F1F6MuBY-0DZ6NILong8dFG"
-
-
-def get_color(shift):
-    if shift == "dawn_in":
-        color = "91203"
-    return color
+load_dotenv()   # env file is in the same dir /Flask/.env
+WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 
-def get_shift(shift):
-    if shift == "dawn_in":
-        color = "91203"
-    return color
-
-
-def create_webhook(username, position, shift, thumbnail_url):
+def create_webhook(user_id, color):
+    username, position, opened_issues, total_issues, hours, thumbnail_url = get_user_data(user_id)
+    issues = str(opened_issues) + "/" + str(total_issues)
     embed = DiscordEmbed(title="Attendance")
-    embed.add_embed_field(name="User", value=username)
-    embed.add_embed_field(name="Position", value=position)
-    embed.add_embed_field(name="Type", value="Morning check-in")
+    embed.add_embed_field(name="User", value=username, inline=False)
+    embed.add_embed_field(name="Position", value=position, inline=False)
+    embed.add_embed_field(name="Issues", value=issues)
+    embed.add_embed_field(name="SpentTime", value=str(hours))
+    if color == 'green':
+        embed.set_color('00ff85')
+    else:
+        embed.set_color('ff0000')
     embed.set_thumbnail(url=thumbnail_url)
     embed.set_footer(text="Marked at ")
     embed.set_timestamp()
-
-    if shift == "check-in":
-        embed.set_color(color="ff0000")
-    elif shift == "check-out":
-        embed.set_color(color="00ff85")
     return embed
 
 
-def send_webhook(username, position, shift, thumbnail_url):
+def send_webhook(user_id, color):
     webhook = DiscordWebhook(url=WEBHOOK_URL, rate_limit_retry=True)
-    embed = create_webhook(username, position, shift, thumbnail_url)
+    embed = create_webhook(user_id, color)
     webhook.add_embed(embed)
     resp = webhook.execute()
-    return resp
-
-
-def process_webhook_output(resp):
     print(resp)
-
-
-response = send_webhook("Shalika Sharma", "Graphic UI/UX Intern Level 1", "check-in", "https://i.pinimg.com/originals/19/cf/78/19cf789a8e216dc898043489c16cec00.jpg")
-process_webhook_output(response)
