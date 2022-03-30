@@ -1,14 +1,5 @@
-from util import Client
-from datetime import datetime, time
-import os
-from os.path import join, dirname
-from dotenv import load_dotenv
-
-dotenv_path = join(dirname(__file__), ".env")
-load_dotenv(dotenv_path)
-
-HASURA_URL = os.environ.get("HASURA_URL")
-HASURA_HEADERS = {"X-Hasura-Admin-Secret": os.environ.get("SECRET_KEY")}
+from datetime import datetime, time, timedelta
+from util import gql_fetch_user_attendance
 
 # Morning shift starts from 02:00 AM
 # Morning shift ends at 01:30 PM
@@ -17,13 +8,9 @@ HASURA_HEADERS = {"X-Hasura-Admin-Secret": os.environ.get("SECRET_KEY")}
 # Cooldown interval should be of 30 minutes
 
 
-client = Client(url=HASURA_URL, headers=HASURA_HEADERS)
-
-
 def get_shift(_time: time):
-    _time = _time.time()
-    begin_time = time(2,00)
-    end_time = time(13,30)
+    begin_time = time(2, 00)
+    end_time = time(13, 30)
     if begin_time <= _time <= end_time:
         shift = "dawn"
     else:
@@ -31,53 +18,57 @@ def get_shift(_time: time):
     return shift
 
 
-def is_cooldown(user_id):
+def is_cooldown(attendance_of_user: dict, shift: str):
+    current_time = datetime.now().time()
+    user_latest_time = None
 
-def search_data(user_id):
-    fetched_records = client.fetch_all_by_id(user_id)
-    array_of_objects = fetched_records["data"]["attendance"]
-    for object in array_of_objects:
-        if object["user_id"] == user_id:
-            print(object)
-            return object
+    for key, value in attendance_of_user.items():
+        if shift in key and value is not None:
+            user_latest_time = value
+
+    user_latest_time = datetime.strptime(user_latest_time, "%H:%M:%S").time()
+    time_diff = timedelta(hours=current_time.hour, minutes=current_time.minute, seconds=current_time.second) - \
+                timedelta(hours=user_latest_time.hour, minutes=user_latest_time.minute, seconds=user_latest_time.second)
+    print(current_time)
+    print(user_latest_time)
+    if time_diff.total_seconds()/60 < 30:
+        return True
+    else:
+        return False
 
 
 def insert_attendance(user_id: str, _time: str):
     current_date = datetime.now().strftime("%Y-%m-%d")
     print(current_date)
     print(_time)
+    _time = datetime.strptime(_time, "%H:%M:%S").time()
+    print(get_shift(_time))
 
-    if _time < MORN_SHIFT_END:  # TODO => Date time object should be compared
-        if not client.fetch_all_by_id(user_id)["data"]["attendance"]:
-            return client.post_time_in(user_id, _time, current_date, "dawn")
+    if get_shift(_time) == "dawn":
+        # get user's latest attendance for current date
+        attendance = gql_fetch_user_attendance(user_id=user_id, date=current_date)['attendance']
+        if len(attendance) == 0:
+            # first punch of the day
+            # insert new entry for current date
+            pass
         else:
-            previous_time = search_data(user_id)["dawn_clock_in"]
-            previous_time = time_to_num(previous_time)
-            # if current_time - previous_time < COOLDOWN_INTERVAL:
-            #     return "Please wait for 5 mins before trying again"
-            # else:
-            return client.post_time_out(user_id, _time, current_date, "dawn")
-    elif current_time > MORN_SHIFT_END:
-        if client.fetch_all_by_id(user_id)["data"]["attendance"] == []:
-            return client.post_time_in(user_id, _time, current_date, "dusk")
-        if search_data(user_id)["dusk_clock_in"] is not None:
-            previous_time = search_data(user_id)["dawn_clock_in"]
-            previous_time = time_to_num(previous_time)
-            # if current_time - previous_time < COOLDOWN_INTERVAL:
-            #     return "Please wait for 5 mins before trying again"
-            # else:
-            return client.post_time_out(user_id, _time, current_date, "dusk")
-        if (
-            search_data(user_id)["dawn_clock_in"] is not None
-            and search_data(user_id)["dawn_clock_out"] is None
-        ):
-            return client.post_time_out(user_id, _time, current_date, "dusk")
+            # second punch of the day
+            if is_cooldown(attendance_of_user=attendance[0], shift="dawn"):
+                return "cooldown period initiated. retry again after some time."
+            else:
+                # dawn clock out
+                pass
 
-
-def time_to_num(time_str: str) -> int:  
-    hh, mm, ss = map(int, time_str.split(":"))
-    return ss + 60 * (mm + 60 * hh)
+    elif get_shift(_time) == "dusk":
+        # get user's latest attendance for current date
+        attendance = gql_fetch_user_attendance(user_id=user_id, date=current_date)['attendance']
+        if len(attendance) != 0:
+            # dusk clock out
+            pass
+        else:
+            # dusk clock in by update attendance for current date
+            pass
 
 
 def get_attendance(user_id: str):
-    return client.fetch_all_by_id(user_id)
+    return gql_fetch_user_attendance(user_id=user_id)
