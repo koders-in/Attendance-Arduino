@@ -16,7 +16,7 @@ client = Client(
 # date str format: YYYY-MM-DD
 # time str format: HH:MM:SS
 
-def gql_fetch_user_attendance(user_id: int, offset: int, date: str = None):
+def gql_fetch_user_attendance(user_id: int, offset: int = 0, date: str = None):
     """
     GQL query to fetch user's all records for attendance or for a particular date
 
