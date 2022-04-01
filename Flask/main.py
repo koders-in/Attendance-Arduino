@@ -58,9 +58,9 @@ def insert_attendance(user_id: str, _time: str):
             return gql_add_user_attendance(user_id=int(user_id), time=_time, date=current_date)
 
 
-def get_attendance(user_id: str):
+def get_attendance(user_id: str, offset: int):
     """
     Get attendance record for a particular user.
     TODO => Add offset fetching
     """
-    return gql_fetch_user_attendance(user_id=int(user_id))
+    return gql_fetch_user_attendance(user_id=int(user_id), offset=offset)

@@ -20,7 +20,11 @@ def process_attendance():
             return f"unable to find {key} in request body"
 
         if request.method == "GET":
-            return get_attendance(user_id)
+            try:
+                offset = request.get_json()['offset']
+            except KeyError:
+                offset = 0
+            return get_attendance(user_id, offset)
 
         if request.method == "POST":
             _time = datetime.datetime.now().strftime("%H:%M:%S")

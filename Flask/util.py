@@ -16,11 +16,12 @@ client = Client(
 # date str format: YYYY-MM-DD
 # time str format: HH:MM:SS
 
-def gql_fetch_user_attendance(user_id: int, date: str = None):
+def gql_fetch_user_attendance(user_id: int, offset: int = 0, date: str = None):
     """
     GQL query to fetch user's all records for attendance or for a particular date
 
     :param user_id: unique user id
+    :param offset: no. of records to skip (from start)
     :param date: date string in YYYY-MM-DD format
     :return: GQL result dict
     """
@@ -29,8 +30,8 @@ def gql_fetch_user_attendance(user_id: int, date: str = None):
         # TODO => add offset
         query = gql(
             '''
-            query getData($user_id: Int!) {
-                attendance(where: {user_id: {_eq: $user_id}}) {
+            query getData($user_id: Int!, $offset: Int!) @cached {
+                attendance(where: {user_id: {_eq: $user_id}}, limit: 10, offset: $offset) {
                     id
                     date
                     user_id
@@ -42,13 +43,14 @@ def gql_fetch_user_attendance(user_id: int, date: str = None):
             '''
         )
         variables = {
-            "user_id": user_id
+            "user_id": user_id,
+            "offset": offset
         }
     else:
         # get data for specific date
         query = gql(
             '''
-            query getData($user_id: Int!, $date: date!) {
+            query getData($user_id: Int!, $date: date!) @cached {
                 attendance(where: {user_id: {_eq: $user_id}, date: {_eq: $date}}, limit: 1, order_by: {id: desc}) {
                     id
                     date
