@@ -12,11 +12,14 @@ def get_profile_picture(user_id):
     }
     response = requests.request("GET", url, headers=headers)
     response = json.loads(response.text)
-    return response['avatar']
+    try:
+        return response['avatar']
+    except Exception:
+        return None
 
 
 def get_user_data(user_id):
-    redmine = Redmine('https://kore.koders.in', key=str(os.getenv('API_KEY')))
+    redmine = Redmine('https://kore.koders.in', key=os.getenv('API_KEY'))
 
     user = redmine.user.get(user_id)
     for x in user:
@@ -40,5 +43,9 @@ def get_user_data(user_id):
         for x in time_entries:
             hours += x.hours
 
-    thumbnail_url = "https://cdn.discordapp.com/avatars/" + str(discord_id) + "/" + get_profile_picture(discord_id) + ".png"
+    profile_picture = get_profile_picture(discord_id)
+    if profile_picture:
+        thumbnail_url = "https://cdn.discordapp.com/avatars/" + str(discord_id) + "/" + profile_picture + ".png"
+    else:
+        thumbnail_url = "https://cdn.discordapp.com/embed/avatars/0.png"
     return str(user['firstname'] + " "+ user['lastname']), position, opened_issues, total_issues, hours, thumbnail_url
