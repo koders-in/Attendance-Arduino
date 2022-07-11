@@ -4,23 +4,24 @@
 #include <MFRC522.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
- 
 
-#define RST_PIN D3 // Configurable, see typical pin layout above
-#define SS_PIN D4 // Configurable, see typical pin layout above
+#define LED D1 // Led in NodeMCU at pin GPIO16 (D0).
+#define RST_PIN D0 // Configurable, see typical pin layout above
+#define SS_PIN D8 // Configurable, see typical pin layout above
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance
 MFRC522::MIFARE_Key key;
 MFRC522::StatusCode status;
 
  
 const char *WIFI_SSID = "Koders"; // Your SSID goes here
-const char *WIFI_PASSWORD = "KodersKorporation@12344321"; // Your wifi password goes here
-const char *URL = "http://192.168..51:5000"; // Your backend link goes here
+const char *WIFI_PASSWORD = "KodersKorp@12344321"; // Your wifi password goes here
+const char *URL = "http://1:9020"; // Your backend link goes here
 
 WiFiClient client;
 HTTPClient httpClient;
 //*****************************************************************************************//
 void setup() {
+    pinMode(LED, OUTPUT); // set the digital pin as output.
     Serial.begin(9600); // Initialize serial communications with the PC
     
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -76,14 +77,57 @@ void loop() {
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
 
-    String payload = value;
-
+    String payload = "{\"user_id\": \"" + value + "\"}";
+    
     httpClient.begin(client, URL);
-    httpClient.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    httpClient.POST(payload);
+    httpClient.addHeader("Content-Type", "application/json");
+    int statusCode = httpClient.POST(payload);
+    Serial.print(statusCode);
+    Serial.print(payload);
     String content = httpClient.getString();
     httpClient.end();
-  
-    Serial.println(content);
-    delay(5000);
+
+    Serial.print(content);
+    if (statusCode == 200){
+      if (content == "cooldown initiated. try again later."){
+      digitalWrite(LED, HIGH);// turn the LED off.(Note that LOW is the voltage level but actually
+      delay(100);          // wait for 1 second.
+      digitalWrite(LED, LOW);
+      delay(100);
+
+      digitalWrite(LED, HIGH);// turn the LED off.(Note that LOW is the voltage level but actually
+      delay(100);          // wait for 1 second.
+      digitalWrite(LED, LOW);
+      delay(100);
+
+      digitalWrite(LED, HIGH);// turn the LED off.(Note that LOW is the voltage level but actually
+      delay(100);          // wait for 1 second.
+      digitalWrite(LED, LOW);
+      delay(100);
+
+      digitalWrite(LED, HIGH);// turn the LED off.(Note that LOW is the voltage level but actually
+      delay(100);          // wait for 1 second.
+      digitalWrite(LED, LOW);
+      delay(100);
+
+      digitalWrite(LED, HIGH);// turn the LED off.(Note that LOW is the voltage level but actually
+      delay(100);          // wait for 1 second.
+      digitalWrite(LED, LOW);
+      delay(100);
+
+      digitalWrite(LED, HIGH);// turn the LED off.(Note that LOW is the voltage level but actually
+      delay(100);          // wait for 1 second.
+      digitalWrite(LED, LOW);
+      delay(100);
+
+      
+      }
+      else{
+      digitalWrite(LED, HIGH);// turn the LED off.(Note that LOW is the voltage level but actually
+      delay(2000);          // wait for 1 second.
+      digitalWrite(LED, LOW);
+      }
+    }
+
+    delay(1000);
 }
