@@ -1,31 +1,58 @@
-from discord_webhook import DiscordWebhook, DiscordEmbed
+from slack_webhook import Slack
 from redmine import get_user_data
 import os
 
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 
-def create_webhook(user_id, color):
-    username, position, opened_issues, total_issues, hours, thumbnail_url = get_user_data(user_id)
-    issues = str(opened_issues) + "/" + str(total_issues)
-    embed = DiscordEmbed(title="Attendance")
-    embed.add_embed_field(name="User", value=username, inline=False)
-    embed.add_embed_field(name="Position", value=position, inline=False)
-    embed.add_embed_field(name="Issues", value=issues)
-    embed.add_embed_field(name="SpentTime", value=str(hours))
-    if color == 'green':
-        embed.set_color('00ff85')
-    else:
-        embed.set_color('ff0000')
-    embed.set_thumbnail(url=thumbnail_url)
-    embed.set_footer(text="Marked at ")
-    embed.set_timestamp()
-    return embed
-
-
 def send_webhook(user_id, color):
-    webhook = DiscordWebhook(url=WEBHOOK_URL, rate_limit_retry=True)
-    embed = create_webhook(user_id, color)
-    webhook.add_embed(embed)
-    resp = webhook.execute()
-    print(resp)
+    username, position, opened_issues, total_issues, hours, thumbnail_url = get_user_data(user_id)
+    slack = Slack(url=WEBHOOK_URL)
+    slack.post(text="",
+   
+    blocks=[{
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": f"*User:*\n{username}".format(username=username)
+				},
+				{
+					"type": "mrkdwn",
+					"text": f"*Position:*\n{position}".format(position=position)
+				},
+				{
+					"type": "mrkdwn",
+					"text": f"*Issues:*\n{opened_issues}/{total_issues}".format(opened_issues=opened_issues,total_issues=total_issues)
+				},
+				{
+					"type": "mrkdwn",
+					"text": f"*Spent Time:*\n{hours}.".format(hours=hours)
+				}
+			],
+            "accessory": {
+				"type": "image",
+				"image_url": thumbnail_url,
+				"alt_text": "computer thumbnail"
+			}
+		},
+        {
+			"type": "actions",
+			"elements": [
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+			            "text": "View my attendance"
+					},
+					"style": "primary",
+					"url": "https://www.google.com"
+				}
+			],
+      
+		},
+       ]
+)
+	
+
+
