@@ -11,7 +11,10 @@ import { Paper, Box, Typography } from "@mui/material";
 export const Card = (p) => {
   //   const classes = makeStyles();
   return (
-    <Paper style={{ width: "33%", margin: "1%", padding: "2%" }} elevation={4}>
+    <Paper
+      style={{ width: "33%", margin: "0 1% 1% 1%", padding: "2%" }}
+      elevation={4}
+    >
       <Box
         display="flex"
         style={{
@@ -26,10 +29,10 @@ export const Card = (p) => {
           flexDirection="column"
           style={{ marginLeft: "18%" }}
         >
-          <Typography variant="h6" component="h6">
+          <Typography fontSize="13px" variant="h6" component="h6">
             {p.title1}
           </Typography>
-          <Typography variant="h6" component="h6">
+          <Typography fontSize="13px" variant="h6" component="h6">
             {p.title2}
           </Typography>
         </Box>

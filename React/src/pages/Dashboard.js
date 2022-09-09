@@ -15,11 +15,13 @@ const useStyles = makeStyles({
     height: "fitContent",
   },
   paperStyle: {
-    margin: "1%",
+    // margin: "1%",
   },
   dashboardContainer: {
     maxWidth: "100% !important",
     margin: "0px important",
+    height: "100vh",
+    overflow: "hidden",
   },
 });
 
@@ -32,26 +34,26 @@ export const Dashboard = ({ user }) => {
       <Typography
         variant="h4"
         component="h2"
-        style={{ marginLeft: "2%", marginTop: "2%", marginBottom: "2%" }}
+        style={{ marginLeft: "2%", marginTop: "1%", marginBottom: "1%" }}
       >
-        Hi, Welcome {user.user.name}
+        Hi, Welcome {user?.user?.name}
       </Typography>
 
       <Grid style={{ padding: 0 }} container>
         <Grid item lg={8}>
           <Box sx={{ display: { md: "flex" } }}>
-            <Card title1="Job Title">
+            <Card title1="Job Title" title2={`Juiner Developer`}>
               <WorkOutlineIcon fontSize="large" />
             </Card>
             <Card
-              title1={`Task opened:${user.issue.opened}`}
-              title2={`Task closed:${user.issue.total}`}
+              title1={`Task opened:${user?.issue?.opened}`}
+              title2={`Task closed:${user?.issue?.total}`}
             >
               <AssignmentIcon fontSize="large" />
             </Card>
             <Card
-              title1={`Project opened:${user.project.opened}`}
-              title2={`Project closed:${user.project.total}`}
+              title1={`Project opened:${user?.project?.opened}`}
+              title2={`Project closed:${user?.project?.total}`}
             >
               <AssignmentTurnedInIcon fontSize="large" />
             </Card>
@@ -62,7 +64,7 @@ export const Dashboard = ({ user }) => {
         </Grid>
         <Grid item lg={4} className={classes.tableStyle}>
           <Paper elevation={4} className={classes.paperStyle}>
-            <ChartComponent data={user.spent_time} />
+            <ChartComponent data={user?.spent_time} />
           </Paper>
         </Grid>
       </Grid>

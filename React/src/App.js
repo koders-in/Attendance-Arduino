@@ -3,17 +3,19 @@ import { createTheme, ThemeProvider, CssBaseline } from "@mui/material";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
 import "./App.css";
-import { getRequest } from "./config/server";
+// import { getRequest } from "./config/server";
 
 export const UseContext = createContext("");
 
 function App() {
-  const [mode, setmode] = useState("light");
+  const [mode, setMode] = useState("light");
   const [user, setUser] = useState({});
   const [data, setData] = useState({
     username: "",
     password: "",
   });
+
+  // CHANGE THEME
   const theme = React.useMemo(
     () =>
       createTheme({
@@ -26,14 +28,17 @@ function App() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const params = data;
-    const result = await getRequest({ params });
-    setUser(result.data);
-    console.log(user);
+    // const params = data;
+    // const result = await getRequest({ params });
+    setUser({ ...dummyData });
   };
+
+  // CHANGE MODE
   const handleMode = () => {
-    setmode((pre) => (pre === "light" ? "dark" : "light"));
+    setMode((pre) => (pre === "light" ? "dark" : "light"));
   };
+
+  // UPDATE STATE
   const handleChange = (event) => {
     const { name, value } = event.target;
     setData((pre) => {
@@ -41,7 +46,7 @@ function App() {
     });
   };
 
-  if (Object.keys(user).length === 0) {
+  if (Object.keys(user)?.length === 0) {
     return <Login {...{ handleChange, handleSubmit }} />;
   }
   return (
@@ -57,3 +62,27 @@ function App() {
 }
 
 export default App;
+
+const dummyData = {
+  user: {
+    name: "Saksham Chauhan",
+    user_id: 72,
+  },
+  project: {
+    opened: 2,
+    total: 2,
+  },
+  issue: {
+    opened: 3,
+    total: 18,
+  },
+  spent_time: {
+    "31/12/2021": 0,
+    "30/12/2021": 8.0,
+    "29/12/2021": 0,
+    "28/12/2021": 8.0,
+    "27/12/2021": 8.0,
+    "26/12/2021": 0,
+    "25/12/2021": 0,
+  },
+};

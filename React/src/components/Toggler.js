@@ -14,7 +14,7 @@ export const Toggler = (p) => {
         justifyContent: "center",
         color: "text.primary",
         borderRadius: 1,
-        p: 3,
+        p: 1,
       }}
     >
       <IconButton sx={{ ml: 1 }}>
