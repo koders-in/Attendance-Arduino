@@ -1,21 +1,21 @@
-import { Box, Container, Grid, Paper, Typography } from "@mui/material";
-import { makeStyles } from "@mui/styles";
 import React from "react";
-import { ChartComponent } from "../components/Chart";
-import { Appbar } from "../components/Appbar";
-import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import { makeStyles } from "@mui/styles";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import { Box, Container, Grid, Paper, Typography } from "@mui/material";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 
-import { Table } from "../components/Table";
 import { Card } from "../components/Card";
+import { Table } from "../components/Table";
+import { Appbar } from "../components/Appbar";
+import { ChartComponent } from "../components/Chart";
 
 const useStyles = makeStyles({
-  tableStyle: {
-    height: "fitContent",
-  },
-  paperStyle: {
-    // margin: "1%",
+  headingStyle: {
+    height: "10vh",
+    alignItems: "center",
+    display: "flex",
+    marginLeft: "1rem !important",
   },
   dashboardContainer: {
     maxWidth: "100% !important",
@@ -23,25 +23,32 @@ const useStyles = makeStyles({
     height: "100vh",
     overflow: "hidden",
   },
+  tableStyle: {
+    height: "80vh",
+  },
+  graphStyle: {
+    height: "78vh",
+    paddingRight: "10px",
+  },
+  paperStyle: {
+    height: "100%",
+  },
 });
 
 export const Dashboard = ({ user }) => {
   const classes = useStyles();
   console.log(user);
+
   return (
     <Container className={classes.dashboardContainer} disableGutters>
       <Appbar />
-      <Typography
-        variant="h4"
-        component="h2"
-        style={{ marginLeft: "2%", marginTop: "1%", marginBottom: "1%" }}
-      >
+      <Typography variant="h4" component="h2" className={classes.headingStyle}>
         Hi, Welcome {user?.user?.name}
       </Typography>
 
       <Grid style={{ padding: 0 }} container>
-        <Grid item lg={8}>
-          <Box sx={{ display: { md: "flex" } }}>
+        <Grid item lg={8} className={classes.tableStyle}>
+          <Box sx={{ display: { md: "flex" } }} style={{ height: "14vh" }}>
             <Card title1="Job Title" title2={`Juiner Developer`}>
               <WorkOutlineIcon fontSize="large" />
             </Card>
@@ -58,11 +65,14 @@ export const Dashboard = ({ user }) => {
               <AssignmentTurnedInIcon fontSize="large" />
             </Card>
           </Box>
-          <Paper elevation={4} style={{ width: "98%", margin: "1%" }}>
+          <Paper
+            elevation={4}
+            style={{ width: "98%", margin: "1%", height: "62.7vh" }}
+          >
             <Table />
           </Paper>
         </Grid>
-        <Grid item lg={4} className={classes.tableStyle}>
+        <Grid item lg={4} className={classes.graphStyle}>
           <Paper elevation={4} className={classes.paperStyle}>
             <ChartComponent data={user?.spent_time} />
           </Paper>

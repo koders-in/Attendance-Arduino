@@ -12,6 +12,13 @@ import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { Toggler } from "./Toggler";
 import { UseContext } from "../App";
+import { makeStyles } from "@mui/styles";
+
+const useStyles = makeStyles({
+  headerStyle: {
+    height: "10vh",
+  },
+});
 
 export const Appbar = () => {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -107,10 +114,11 @@ export const Appbar = () => {
   );
   const { handleMode } = useContext(UseContext);
 
+  const classes = useStyles();
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar style={{ width: "100%" }} position="static">
-        <Toolbar>
+    <Box sx={{ flexGrow: 1 }} className={classes.headerStyle}>
+      <AppBar style={{ width: "100%", height: "100%" }} position="static">
+        <Toolbar style={{ height: "100%" }}>
           <Typography
             variant="h6"
             noWrap

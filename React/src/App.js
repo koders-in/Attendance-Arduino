@@ -1,9 +1,11 @@
-import React, { useState, createContext } from "react";
+import React, { useState, createContext, useEffect } from "react";
 import { createTheme, ThemeProvider, CssBaseline } from "@mui/material";
-import { Dashboard } from "./pages/Dashboard";
+
 import { Login } from "./pages/Login";
+import { startFetchMyQuery } from "./api/api";
+import { Dashboard } from "./pages/Dashboard";
+
 import "./App.css";
-// import { getRequest } from "./config/server";
 
 export const UseContext = createContext("");
 
@@ -14,6 +16,14 @@ function App() {
     username: "",
     password: "",
   });
+
+  useEffect(() => {
+    // FETCH DATA FROM SERVER ON THE FIREST RENDER OF APP
+    async function fetchData() {
+      const response = await startFetchMyQuery();
+    }
+    fetchData();
+  }, []);
 
   // CHANGE THEME
   const theme = React.useMemo(
@@ -26,6 +36,7 @@ function App() {
     [mode]
   );
 
+  // EXECUTE ON LOGIN BUTTON PRESS
   const handleSubmit = async (event) => {
     event.preventDefault();
     // const params = data;

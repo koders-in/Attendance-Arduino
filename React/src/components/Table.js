@@ -4,7 +4,8 @@ import { makeStyles } from "@mui/styles";
 
 const useStyles = makeStyles({
   tableStyle: {
-    height: "30rem !important",
+    height: "25rem !important",
+    width: "100% !important",
   },
 });
 
@@ -15,7 +16,7 @@ export const Table = () => {
       sx={{ width: "100%" }}
       rows={rows}
       columns={columns}
-      pageSize={7}
+      pageSize={6}
       rowsPerPageOptions={[8]}
       className={classes.tableStyle}
     />

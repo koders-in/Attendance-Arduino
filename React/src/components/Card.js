@@ -12,7 +12,11 @@ export const Card = (p) => {
   //   const classes = makeStyles();
   return (
     <Paper
-      style={{ width: "33%", margin: "0 1% 1% 1%", padding: "2%" }}
+      style={{
+        width: "33%",
+        margin: "0 1% 1% 1%",
+        padding: "2%",
+      }}
       elevation={4}
     >
       <Box
@@ -21,6 +25,7 @@ export const Card = (p) => {
           padding: "2%",
           alignItems: "center",
           justifyContent: "center",
+          height: "100%",
         }}
       >
         {p.children}

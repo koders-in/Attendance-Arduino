@@ -25,11 +25,11 @@ ChartJS.register(
 
 const useStyle = makeStyles({
   textPie: {
-    textAlign: "center",
-    paddingTop: "5%",
+    top: "42%",
+    left: "26%",
     position: "absolute",
-    left: "32%",
-    top: "33%",
+    textAlign: "center",
+    paddingTop: "0%",
   },
 });
 
@@ -61,10 +61,10 @@ export const ChartComponent = (time) => {
   const classes = useStyle();
   return (
     <>
-      <Box>
+      <Box style={{ height: "100%" }}>
         <Box
           style={{
-            height: "323px",
+            height: "50%",
             width: "100%",
             position: "relative",
           }}
@@ -84,7 +84,7 @@ export const ChartComponent = (time) => {
             radius={43}
           />
         </Box>
-        <Box style={{ padding: "10px" }}>
+        <Box style={{ padding: "10px", height: "50%" }}>
           <Bar
             options={{
               responsive: true,
