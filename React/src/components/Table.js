@@ -9,12 +9,37 @@ const useStyles = makeStyles({
   },
 });
 
-export const Table = () => {
+export const Table = ({ rows }) => {
+  let data = rows.attendance;
+  let temp = [];
+  for (let i = data?.length - 1; i >= 0; i--) {
+    let dateObj = new Date(`${data[i].date}`);
+    let forIn = [],
+      forOut = [];
+    if (data[i].clock_in) {
+      forIn = new Date(`${data[i].date}T${data[i].clock_in}.000Z`)
+        .toLocaleString(undefined, { timeZone: "Asia/Kolkata" })
+        .split(" ");
+    }
+    if (data[i].clock_out) {
+      forOut = new Date(`${data[i].date}T${data[i].clock_out}.000Z`)
+        .toLocaleString(undefined, { timeZone: "Asia/Kolkata" })
+        .split(" ");
+    }
+
+    temp.push({
+      ...data[i],
+      date: dateObj.toDateString(),
+      clock_in: forIn?.length ? forIn[1] + ":" + forIn[2] : null,
+      clock_out: forOut.length ? forOut[1] + ":" + forOut[2] : null,
+    });
+  }
+
   const classes = useStyles();
   return (
     <DataGrid
       sx={{ width: "100%" }}
-      rows={rows}
+      rows={temp || []}
       columns={columns}
       pageSize={6}
       rowsPerPageOptions={[8]}
@@ -24,63 +49,21 @@ export const Table = () => {
 };
 
 const columns = [
-  { field: "id", headerName: "Date", width: 1005 / 4 },
-  { field: "firstName", headerName: "Morning (11:10-02:00)", width: 1005 / 4 },
-  { field: "lastName", headerName: "Evening (03:10-07:00)", width: 1005 / 4 },
+  { field: "date", headerName: "Date", width: 1005 / 5 + 10 },
   {
-    field: "age",
+    field: "clock_in",
+    headerName: "Morning (11:10-02:00)",
+    width: 1005 / 5 + 10,
+  },
+  {
+    field: "clock_out",
+    headerName: "Evening (03:10-07:00)",
+    width: 1005 / 5 + 10,
+  },
+  {
+    field: "comment",
     headerName: "Remark",
 
-    width: 1005 / 4,
+    width: 1005 / 5 + 10,
   },
-  //   {
-  //     field: "fullName",
-  //     headerName: "Full name",
-  //     description: "This column has a value getter and is not sortable.",
-  //     sortable: false,
-  //     width: 160,
-  //     valueGetter: (params) =>
-  //       `${params.getValue(params.id, "firstName") || ""} ${
-  //         params.getValue(params.id, "lastName") || ""
-  //       }`,
-  //   },
-];
-
-const rows = [
-  { id: 1, lastName: "Snow", firstName: "Jon", age: 35 },
-  { id: 2, lastName: "Lannister", firstName: "Cersei", age: 42 },
-  { id: 3, lastName: "Lannister", firstName: "Jaime", age: 45 },
-  { id: 4, lastName: "Stark", firstName: "Arya", age: 16 },
-  { id: 5, lastName: "Targaryen", firstName: "Daenerys", age: null },
-  { id: 6, lastName: "Melisandre", firstName: null, age: 150 },
-  { id: 7, lastName: "Clifford", firstName: "Ferrara", age: 44 },
-  { id: 8, lastName: "Frances", firstName: "Rossini", age: 36 },
-  { id: 9, lastName: "Roxie", firstName: "Harvey", age: 65 },
-  { id: 1, lastName: "Snow", firstName: "Jon", age: 35 },
-  { id: 2, lastName: "Lannister", firstName: "Cersei", age: 42 },
-  { id: 3, lastName: "Lannister", firstName: "Jaime", age: 45 },
-  { id: 4, lastName: "Stark", firstName: "Arya", age: 16 },
-  { id: 5, lastName: "Targaryen", firstName: "Daenerys", age: null },
-  { id: 6, lastName: "Melisandre", firstName: null, age: 150 },
-  { id: 7, lastName: "Clifford", firstName: "Ferrara", age: 44 },
-  { id: 8, lastName: "Frances", firstName: "Rossini", age: 36 },
-  { id: 9, lastName: "Roxie", firstName: "Harvey", age: 65 },
-  { id: 1, lastName: "Snow", firstName: "Jon", age: 35 },
-  { id: 2, lastName: "Lannister", firstName: "Cersei", age: 42 },
-  { id: 3, lastName: "Lannister", firstName: "Jaime", age: 45 },
-  { id: 4, lastName: "Stark", firstName: "Arya", age: 16 },
-  { id: 5, lastName: "Targaryen", firstName: "Daenerys", age: null },
-  { id: 6, lastName: "Melisandre", firstName: null, age: 150 },
-  { id: 7, lastName: "Clifford", firstName: "Ferrara", age: 44 },
-  { id: 8, lastName: "Frances", firstName: "Rossini", age: 36 },
-  { id: 9, lastName: "Roxie", firstName: "Harvey", age: 65 },
-  { id: 1, lastName: "Snow", firstName: "Jon", age: 35 },
-  { id: 2, lastName: "Lannister", firstName: "Cersei", age: 42 },
-  { id: 3, lastName: "Lannister", firstName: "Jaime", age: 45 },
-  { id: 4, lastName: "Stark", firstName: "Arya", age: 16 },
-  { id: 5, lastName: "Targaryen", firstName: "Daenerys", age: null },
-  { id: 6, lastName: "Melisandre", firstName: null, age: 150 },
-  { id: 7, lastName: "Clifford", firstName: "Ferrara", age: 44 },
-  { id: 8, lastName: "Frances", firstName: "Rossini", age: 36 },
-  { id: 9, lastName: "Roxie", firstName: "Harvey", age: 65 },
 ];

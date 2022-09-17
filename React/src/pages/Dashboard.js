@@ -1,14 +1,17 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { makeStyles } from "@mui/styles";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
-import { Box, Container, Grid, Paper, Typography } from "@mui/material";
+import { Box, Button, Container, Grid, Paper, Typography } from "@mui/material";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 
 import { Card } from "../components/Card";
-import { Table } from "../components/Table";
+// import { Table } from "../components/Table";
 import { Appbar } from "../components/Appbar";
 import { ChartComponent } from "../components/Chart";
+import NewTable from "../components/NewTable";
+import { getAllData, getLastSeven, startFetchMyQuery } from "../api/api";
+import { useState } from "react";
 
 const useStyles = makeStyles({
   headingStyle: {
@@ -36,8 +39,57 @@ const useStyles = makeStyles({
 });
 
 export const Dashboard = ({ user }) => {
+  const isFirstRender = useRef(true);
+  const [userInfo, setUserInfo] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const [status, setStatus] = useState(10);
+  const [disableButton, setDisableButton] = useState(false);
+  const [currentTable, setCurrentTable] = useState([]);
+  const [lastWeek, setLastWeek] = useState([]);
+  const [allAtten, setAllAtten] = useState([]);
   const classes = useStyles();
-  console.log(user);
+
+  const handleNext = async () => {
+    if (status >= offset + 10) {
+      setDisableButton(true);
+      const response = await startFetchMyQuery(offset + 10);
+      if (response?.attendance?.length) {
+        setUserInfo([...userInfo, ...response?.attendance]);
+        setOffset(offset + 10);
+        setCurrentTable(response?.attendance);
+        setStatus(status + 10);
+      }
+      setDisableButton(false);
+    } else {
+      setCurrentTable(userInfo.slice(status, status + 10));
+      setStatus(status + 10);
+    }
+  };
+
+  const handleBack = () => {
+    if (status > 10) {
+      setCurrentTable(userInfo.slice(status - 20, status - 10));
+      setStatus(status - 10);
+    }
+  };
+
+  useEffect(() => {
+    // FETCH DATA FROM SERVER ON THE FIREST RENDER OF APP
+    async function fetchData() {
+      const response = await startFetchMyQuery(offset);
+      setUserInfo(response?.attendance);
+      setCurrentTable(response?.attendance);
+      const res = await getLastSeven();
+      setLastWeek(res);
+      const allAtt = await getAllData();
+      setAllAtten(allAtt);
+    }
+    if (isFirstRender.current) {
+      console.log("run");
+      isFirstRender.current = false;
+      fetchData();
+    }
+  }, [offset]);
 
   return (
     <Container className={classes.dashboardContainer} disableGutters>
@@ -67,41 +119,37 @@ export const Dashboard = ({ user }) => {
           </Box>
           <Paper
             elevation={4}
-            style={{ width: "98%", margin: "1%", height: "62.7vh" }}
+            style={{
+              width: "98%",
+              margin: "1%",
+              height: "54.7vh",
+              overflow: "scroll",
+            }}
           >
-            <Table />
+            <NewTable {...{ currentTable }} />
           </Paper>
+          <Button
+            variant="contained"
+            style={{ marginRight: "10px", marginLeft: "10px", float: "right" }}
+            onClick={handleNext}
+            disabled={disableButton}
+          >
+            Next
+          </Button>
+          <Button
+            variant="contained"
+            style={{ marginRight: "10px", marginLeft: "10px", float: "right" }}
+            onClick={handleBack}
+          >
+            Back
+          </Button>
         </Grid>
         <Grid item lg={4} className={classes.graphStyle}>
           <Paper elevation={4} className={classes.paperStyle}>
-            <ChartComponent data={user?.spent_time} />
+            <ChartComponent {...{ lastWeek, allAtten }} />
           </Paper>
         </Grid>
       </Grid>
     </Container>
   );
 };
-
-// {
-//   "user":{
-//      "name":"Saksham Chauhan",
-//      "user_id":72
-//   },
-//   "project":{
-//      "opened":2,
-//      "total":2
-//   },
-//   "issue":{
-//      "opened":3,
-//      "total":18
-//   },
-//   "spent_time":{
-//      "31/12/2021":0,
-//      "30/12/2021":8.0,
-//      "29/12/2021":0,
-//      "28/12/2021":8.0,
-//      "27/12/2021":8.0,
-//      "26/12/2021":0,
-//      "25/12/2021":0
-//   }
-// }

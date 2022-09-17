@@ -1,10 +1,16 @@
-// import Redmine from "node-redmine";
-// // const Redmine = {};
+const operationsDoc = (offset = 0) => `
+      query MyQuery {
+        attendance(where: {user_id:{_eq:81}},limit: 10,offset: ${offset}) {
+            id
+            date
+            clock_in
+            clock_out
+            comment
+        }
+      }
+    `;
 
-const token =
-  "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJodHRwczovL2hhc3VyYS5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWRlZmF1bHQtcm9sZSI6ImJvdCIsIngtaGFzdXJhLWFsbG93ZWQtcm9sZXMiOlsiYm90Il19fQ.Fo4nwUcy_DATDbFxPjbdAUG1oeAdzy1xuMjy8vSwDaZ0BLXq6tqhiQHNTYAS5nTXtFOEzJ0DzTi9n6tchhDIn7ryFSXPgr0iF4AzLsWDN0nxJf5WLV1EzStaUA_cldUVnG0cpU9D-DpUcLgTGPSmbKHYqtHdRdALjgh-ErGn7po";
-
-const operationsDoc = `
+const fetchTotalData = `
       query MyQuery {
         attendance {
             id
@@ -36,42 +42,40 @@ async function fetchGraphQL(operationsDoc, operationName, variables) {
   return await result.json();
 }
 
-function fetchMyQuery() {
-  return fetchGraphQL(operationsDoc, "MyQuery", {});
+function fetchMyQuery(offset) {
+  return fetchGraphQL(operationsDoc(offset), "MyQuery", {});
 }
 
-export async function startFetchMyQuery() {
-  const { errors, data } = await fetchMyQuery();
+function fetchMyQueryAll(offset) {
+  return fetchGraphQL(fetchTotalData, "MyQuery", {});
+}
+
+export async function startFetchMyQuery(offset) {
+  const { errors, data } = await fetchMyQuery(offset);
   if (errors) {
-    // handle those errors like a pro
     console.error(errors);
   }
-  // do something great with this precious data
-  console.log(data);
   return data;
 }
 
-// GET AUTH FROM REDMINE AND ACCESS DATA
-// let hostname = "http://kore.koders.in/";
-// let config = {
-//   apiKey: "3c52cd5306d53eb54612ac4afc9dc63dc8f0b425",
-// };
+async function startFetchAllQuery() {
+  const { errors, data } = await fetchMyQueryAll();
+  if (errors) {
+    console.error(errors);
+  }
+  return data;
+}
 
-// const redmine = new Redmine(hostname, config);
+export async function getLastSeven() {
+  const res = await startFetchAllQuery();
+  const data = res?.attendance?.slice(
+    res.attendance.length - 7,
+    res.attendance.length - 1
+  );
+  return data;
+}
 
-// let dump_issue = function (issue) {
-//   console.log("Dumping issue:");
-//   for (let item in issue) {
-//     console.log("  " + item + ": " + JSON.stringify(issue[item]));
-//   }
-// };
-
-export const constFetchRedime = () => {
-  // redmine.issues({ limit: 2 }, function (err, data) {
-  //   if (err) console.log(err);
-  //   for (let i in data.issues) {
-  //     dump_issue(data.issues[i]);
-  //   }
-  //   console.log("total_count: " + data.total_count);
-  // });
-};
+export async function getAllData() {
+  const res = await startFetchAllQuery();
+  return res.attendance;
+}

@@ -1,4 +1,4 @@
-import React, { useState, createContext, useEffect } from "react";
+import React, { useState, createContext } from "react";
 import { createTheme, ThemeProvider, CssBaseline } from "@mui/material";
 
 import { Login } from "./pages/Login";
@@ -16,14 +16,6 @@ function App() {
     username: "",
     password: "",
   });
-
-  useEffect(() => {
-    // FETCH DATA FROM SERVER ON THE FIREST RENDER OF APP
-    async function fetchData() {
-      const response = await startFetchMyQuery();
-    }
-    fetchData();
-  }, []);
 
   // CHANGE THEME
   const theme = React.useMemo(
